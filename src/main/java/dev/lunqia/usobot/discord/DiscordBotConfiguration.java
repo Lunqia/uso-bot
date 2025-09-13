@@ -1,7 +1,7 @@
 package dev.lunqia.usobot.discord;
 
-import dev.lunqia.usobot.discord.command.CommandDispatcher;
 import dev.lunqia.usobot.discord.command.SlashCommand;
+import dev.lunqia.usobot.discord.command.SlashCommandDispatcher;
 import discord4j.core.DiscordClient;
 import discord4j.core.GatewayDiscordClient;
 import discord4j.core.event.domain.interaction.ChatInputInteractionEvent;
@@ -22,26 +22,29 @@ import reactor.core.publisher.Mono;
 public class DiscordBotConfiguration {
   @Bean
   public ApplicationRunner discordBotRunner(
-      DiscordBotProperties properties, CommandDispatcher dispatcher) {
+      DiscordBotProperties discordBotProperties, SlashCommandDispatcher slashCommandDispatcher) {
     return args -> {
-      if (properties.getToken() == null || properties.getToken().isBlank()) {
-        log.warn("Discord bot token is missing. Set discord.bot.token to enable the bot");
+      if (discordBotProperties.getToken() == null || discordBotProperties.getToken().isBlank()) {
+        log.warn("Discord bot token is missing, set {DISCORD_BOT_TOKEN} first");
+        System.exit(1);
         return;
       }
 
-      DiscordClient client = DiscordClient.create(properties.getToken());
+      DiscordClient client = DiscordClient.create(discordBotProperties.getToken());
 
       client
           .withGateway(
               gateway -> {
-                log.info("Discord gateway session starting. Attaching listeners before READY");
+                log.info("Discord gateway session starting, attaching listeners");
 
                 Mono<Void> interactionsStream =
                     gateway
                         .on(ChatInputInteractionEvent.class)
                         .doOnSubscribe(
                             __ -> log.info("Subscribed to ChatInputInteractionEvent stream"))
-                        .flatMap(event -> event.deferReply().then(dispatcher.dispatch(event)))
+                        .flatMap(
+                            event ->
+                                event.deferReply().then(slashCommandDispatcher.dispatch(event)))
                         .onErrorResume(
                             exception -> {
                               log.error("Error while processing interaction event", exception);
@@ -53,7 +56,8 @@ public class DiscordBotConfiguration {
                     Mono.defer(
                             () -> {
                               log.info("Starting slash command registration");
-                              return registerSlashCommands(gateway, dispatcher, properties);
+                              return registerSlashCommands(
+                                  gateway, slashCommandDispatcher, discordBotProperties);
                             })
                         .onErrorResume(
                             exception -> {
@@ -73,29 +77,31 @@ public class DiscordBotConfiguration {
   }
 
   private Mono<Void> registerSlashCommands(
-      GatewayDiscordClient gateway, CommandDispatcher dispatcher, DiscordBotProperties properties) {
-    Map<String, SlashCommand> handlers = dispatcher.handlers();
-    List<ApplicationCommandRequest> requests =
-        handlers.values().stream()
+      GatewayDiscordClient gateway,
+      SlashCommandDispatcher slashCommandDispatcher,
+      DiscordBotProperties discordBotProperties) {
+    Map<String, SlashCommand> slashCommandMap = slashCommandDispatcher.getSlashCommandMap();
+    List<ApplicationCommandRequest> applicationCommandRequests =
+        slashCommandMap.values().stream()
             .map(
-                handler ->
+                slashCommand ->
                     ApplicationCommandRequest.builder()
-                        .name(handler.name())
-                        .description(handler.description())
-                        .options(handler.options())
+                        .name(slashCommand.name())
+                        .description(slashCommand.description())
+                        .options(slashCommand.options())
                         .build())
-            .<ApplicationCommandRequest>map(req -> req)
+            .<ApplicationCommandRequest>map(
+                immutableApplicationCommandRequest -> immutableApplicationCommandRequest)
             .toList();
 
     Mono<Long> applicationId = gateway.getRestClient().getApplicationId();
-
-    List<Long> configuredGuildIds = properties.getGuildIds();
+    List<Long> configuredGuildIds = discordBotProperties.getGuildIds();
     boolean hasGuildIds = configuredGuildIds != null && !configuredGuildIds.isEmpty();
 
     if (hasGuildIds) {
       log.info(
           "Registering {} slash command(s) for configured guild(s): {}",
-          requests.size(),
+          applicationCommandRequests.size(),
           configuredGuildIds);
 
       return applicationId
@@ -107,13 +113,14 @@ public class DiscordBotConfiguration {
                               gateway
                                   .getRestClient()
                                   .getApplicationService()
-                                  .bulkOverwriteGuildApplicationCommand(appId, guildId, requests)
+                                  .bulkOverwriteGuildApplicationCommand(
+                                      appId, guildId, applicationCommandRequests)
                                   .collectList()
                                   .doOnNext(
-                                      list ->
+                                      applicationCommandDataList ->
                                           log.info(
                                               "Registered {} guild command(s) for guild {}",
-                                              list.size(),
+                                              applicationCommandDataList.size(),
                                               guildId))
                                   .onErrorResume(
                                       exception -> {
@@ -127,8 +134,7 @@ public class DiscordBotConfiguration {
           .then();
     }
 
-    log.warn(
-        "No guild IDs configured. Skipping slash command registration to avoid global registration");
+    log.warn("No guild IDs configured, skipping slash command registration");
     return Mono.empty();
   }
 }

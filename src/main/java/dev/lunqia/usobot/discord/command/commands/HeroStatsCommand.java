@@ -40,7 +40,7 @@ public class HeroStatsCommand implements SlashCommand {
 
   @Override
   public String description() {
-    return "Display detailed stats for a specific hero.";
+    return "Display Overwatch profile stats for a specific hero.";
   }
 
   @Override

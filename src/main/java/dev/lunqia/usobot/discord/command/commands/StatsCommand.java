@@ -38,7 +38,7 @@ public class StatsCommand implements SlashCommand {
 
   @Override
   public String description() {
-    return "Look up an Overwatch profile by platform and BattleTag (complete stats by default).";
+    return "Look up an Overwatch profile by platform and BattleTag.";
   }
 
   @Override
