@@ -1,0 +1,13 @@
+spring:
+  application:
+    name: uso-bot
+owapi:
+  base-url: https://owapi.eu
+  request-timeout-seconds: 10
+catapi:
+  base-url: https://api.thecatapi.com
+  api-key: ${CAT_API_KEY:}
+discord:
+  bot:
+    token: ${DISCORD_BOT_TOKEN:}
+    guild-ids: [1355913961312227549]
