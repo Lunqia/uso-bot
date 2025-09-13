@@ -10,7 +10,7 @@ import org.springframework.web.reactive.function.client.WebClient;
 public class CatApiConfiguration {
 
   @Bean
-  public CatService catService(WebClient.Builder builder, CatApiProperties properties) {
-    return new CatService(builder, properties);
+  public CatApiService catService(WebClient.Builder builder, CatApiProperties properties) {
+    return new CatApiService(builder, properties);
   }
 }

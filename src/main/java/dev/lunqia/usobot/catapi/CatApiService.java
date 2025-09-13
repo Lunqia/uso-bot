@@ -6,10 +6,10 @@ import org.springframework.util.StringUtils;
 import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Mono;
 
-public class CatService {
+public class CatApiService {
   private final WebClient client;
 
-  public CatService(WebClient.Builder builder, CatApiProperties properties) {
+  public CatApiService(WebClient.Builder builder, CatApiProperties properties) {
     String apiKey = properties.getApiKey();
     WebClient.Builder base =
         builder
@@ -36,11 +36,11 @@ public class CatService {
                     .queryParam("limit", 1)
                     .build())
         .retrieve()
-        .bodyToFlux(CatServiceResponse.class)
+        .bodyToFlux(CatApiServiceResponse.class)
         .next()
-        .map(CatServiceResponse::url)
+        .map(CatApiServiceResponse::url)
         .filter(Objects::nonNull);
   }
 
-  public record CatServiceResponse(String id, String url) {}
+  public record CatApiServiceResponse(String id, String url) {}
 }
