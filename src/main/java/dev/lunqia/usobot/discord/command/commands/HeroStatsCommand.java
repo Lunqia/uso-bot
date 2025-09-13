@@ -70,119 +70,103 @@ public class HeroStatsCommand implements SlashCommand {
   public Mono<Void> handle(ChatInputInteractionEvent event) {
     String discordId = event.getInteraction().getUser().getId().asString();
 
-    Mono<Optional<String>> platformOption =
-        Mono.justOrEmpty(
-            Optional.of(
-                event
-                    .getOption(OPTION_PLATFORM)
-                    .flatMap(
-                        option ->
-                            option
-                                .getValue()
-                                .map(ApplicationCommandInteractionOptionValue::asString))
-                    .map(platform -> platform.toLowerCase(Locale.ROOT).trim())));
-
-    Mono<Optional<String>> battleTagOption =
-        Mono.justOrEmpty(
-            Optional.of(
-                event
-                    .getOption(OPTION_BATTLE_TAG)
-                    .flatMap(
-                        option ->
-                            option
-                                .getValue()
-                                .map(ApplicationCommandInteractionOptionValue::asString))));
-
-    Mono<String> heroMono =
-        Mono.justOrEmpty(
-                event
-                    .getOption(OPTION_HERO)
-                    .flatMap(
-                        option ->
-                            option
-                                .getValue()
-                                .map(ApplicationCommandInteractionOptionValue::asString)))
-            .map(String::toLowerCase);
-
     return userLinkRepository
         .findById(discordId)
         .defaultIfEmpty(UserLink.builder().build())
         .flatMap(
             userLink -> {
-              Mono<String> platformMono =
-                  platformOption
-                      .flatMap(Mono::justOrEmpty)
-                      .switchIfEmpty(
-                          Mono.justOrEmpty(
-                              Optional.ofNullable(userLink.getPlatformType())
-                                  .map(PlatformType::getApiName)));
+              Optional<String> platformOption =
+                  event
+                      .getOption(OPTION_PLATFORM)
+                      .flatMap(
+                          option ->
+                              option
+                                  .getValue()
+                                  .map(ApplicationCommandInteractionOptionValue::asString))
+                      .map(platform -> platform.toLowerCase(Locale.ROOT).trim());
 
-              Mono<String> battleTagMono =
-                  battleTagOption
-                      .flatMap(Mono::justOrEmpty)
-                      .switchIfEmpty(
-                          Mono.justOrEmpty(Optional.ofNullable(userLink.getBattleTag())));
+              Optional<String> battleTagOption =
+                  event
+                      .getOption(OPTION_BATTLE_TAG)
+                      .flatMap(
+                          option ->
+                              option
+                                  .getValue()
+                                  .map(ApplicationCommandInteractionOptionValue::asString));
 
-              return Mono.zip(platformMono, battleTagMono, heroMono)
-                  .flatMap(
-                      tuple -> {
-                        String platform = tuple.getT1();
-                        String battleTag = tuple.getT2();
-                        String hero = tuple.getT3();
+              Optional<String> heroOption =
+                  event
+                      .getOption(OPTION_HERO)
+                      .flatMap(
+                          option ->
+                              option
+                                  .getValue()
+                                  .map(ApplicationCommandInteractionOptionValue::asString))
+                      .map(String::toLowerCase);
 
-                        if (battleTag.isBlank()) {
-                          return event
-                              .editReply()
-                              .withContent(
-                                  Possible.of(
-                                      Optional.of(
-                                          "No BattleTag provided and none linked. Use `/link` to set one or provide one explicitly.")))
-                              .then();
-                        }
+              String platform =
+                  platformOption.orElseGet(
+                      () ->
+                          Optional.ofNullable(userLink.getPlatformType())
+                              .map(PlatformType::getApiName)
+                              .orElse(null));
 
-                        if (!PlatformType.isValidPlatform(platform)) {
-                          return event
-                              .editReply()
-                              .withContent(
-                                  Possible.of(
-                                      Optional.of("Invalid platform. Please use pc, psn, or xbl.")))
-                              .then();
-                        }
+              String battleTag = battleTagOption.orElseGet(userLink::getBattleTag);
 
-                        return service
-                            .getCompleteStats(platform, battleTag)
-                            .flatMap(
-                                stats -> {
-                                  EmbedCreateSpec embed = createHeroEmbed(stats, hero);
-                                  return event
-                                      .editReply()
-                                      .withEmbeds(Possible.of(Optional.of(List.of(embed))))
-                                      .then();
-                                });
-                      })
-                  .switchIfEmpty(
-                      event
-                          .editReply()
-                          .withContent(
-                              Possible.of(
-                                  Optional.of(
-                                      "No platform or BattleTag could be found. Please provide one or use `/link`.")))
-                          .then());
-            })
-        .onErrorResume(
-            ProfileNotFoundException.class,
-            exception ->
-                event
+              String hero = heroOption.orElse(null);
+
+              if (battleTag == null || battleTag.isBlank()) {
+                return event
                     .editReply()
-                    .withContent(Possible.of(Optional.of("Overwatch profile not found.")))
-                    .then())
-        .onErrorResume(
-            exception -> {
-              log.error("Error retrieving Overwatch hero stats", exception);
-              return event
-                  .editReply()
-                  .withContent(Possible.of(Optional.of("Failed to retrieve Overwatch hero stats.")))
-                  .then();
+                    .withContent(
+                        Possible.of(
+                            Optional.of(
+                                "No BattleTag provided and none linked. Use `/link` to set one or provide one explicitly.")))
+                    .then();
+              }
+
+              if (!PlatformType.isValidPlatform(platform)) {
+                return event
+                    .editReply()
+                    .withContent(
+                        Possible.of(Optional.of("Invalid platform. Please use pc, psn, or xbl.")))
+                    .then();
+              }
+
+              if (hero == null || hero.isBlank()) {
+                return event
+                    .editReply()
+                    .withContent(Possible.of(Optional.of("Please provide a hero name.")))
+                    .then();
+              }
+
+              return service
+                  .getCompleteStats(platform, battleTag)
+                  .flatMap(
+                      stats -> {
+                        EmbedCreateSpec embed = createHeroEmbed(stats, hero);
+                        return event
+                            .editReply()
+                            .withEmbeds(Possible.of(Optional.of(List.of(embed))))
+                            .then();
+                      })
+                  .onErrorResume(
+                      ProfileNotFoundException.class,
+                      exception ->
+                          event
+                              .editReply()
+                              .withContent(Possible.of(Optional.of("Overwatch profile not found.")))
+                              .then())
+                  .onErrorResume(
+                      exception -> {
+                        log.error("Error retrieving Overwatch hero stats", exception);
+                        return event
+                            .editReply()
+                            .withContent(
+                                Possible.of(
+                                    Optional.of("Failed to retrieve Overwatch hero stats.")))
+                            .then();
+                      });
             });
   }
 
