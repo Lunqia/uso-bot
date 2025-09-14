@@ -148,7 +148,7 @@ public class DiscordBotConfiguration {
             boolean isValidGuild = botGuildIds != null && !botGuildIds.contains(guildId);
             if (!isValidGuild)
               log.warn(
-                  "Bot is not a member of guild {}, skipping command registration for this guild",
+                  "Bot is not a member of guild {}, skipping slash command registration for this guild",
                   guildId);
             return isValidGuild;
           });
