@@ -11,4 +11,5 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 public class DiscordBotProperties {
   private String token;
   private List<Long> guildIds;
+  private List<Long> autoRoleIds;
 }

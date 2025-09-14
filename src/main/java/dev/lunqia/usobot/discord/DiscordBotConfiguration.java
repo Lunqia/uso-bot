@@ -2,10 +2,14 @@ package dev.lunqia.usobot.discord;
 
 import dev.lunqia.usobot.discord.command.SlashCommand;
 import dev.lunqia.usobot.discord.command.SlashCommandDispatcher;
+import discord4j.common.util.Snowflake;
 import discord4j.core.DiscordClient;
 import discord4j.core.GatewayDiscordClient;
+import discord4j.core.event.domain.guild.MemberJoinEvent;
 import discord4j.core.event.domain.interaction.ChatInputInteractionEvent;
 import discord4j.discordjson.json.ApplicationCommandRequest;
+import discord4j.gateway.intent.Intent;
+import discord4j.gateway.intent.IntentSet;
 import java.util.List;
 import java.util.Map;
 import lombok.extern.slf4j.Slf4j;
@@ -33,11 +37,18 @@ public class DiscordBotConfiguration {
       DiscordClient client = DiscordClient.create(discordBotProperties.getToken());
 
       client
+          .gateway()
+          .setEnabledIntents(
+              IntentSet.of(
+                  Intent.GUILDS,
+                  Intent.GUILD_MEMBERS,
+                  Intent.GUILD_MESSAGES,
+                  Intent.MESSAGE_CONTENT))
           .withGateway(
               gateway -> {
                 log.info("Discord gateway session starting, attaching listeners");
 
-                Mono<Void> interactionsStream =
+                Mono<Void> slashCommandInteractionListener =
                     gateway
                         .on(ChatInputInteractionEvent.class)
                         .doOnSubscribe(
@@ -52,7 +63,7 @@ public class DiscordBotConfiguration {
                             })
                         .then();
 
-                Mono<Void> registration =
+                Mono<Void> slashCommandRegistration =
                     Mono.defer(
                             () -> {
                               log.info("Starting slash command registration");
@@ -67,7 +78,38 @@ public class DiscordBotConfiguration {
                             })
                         .then();
 
-                return Mono.when(interactionsStream, registration);
+                Mono<Void> autoRoleOnJoin =
+                    gateway
+                        .on(MemberJoinEvent.class)
+                        .doOnSubscribe(__ -> log.info("Subscribed to MemberJoinEvent stream"))
+                        .flatMap(
+                            event -> {
+                              long guildId = event.getGuildId().asLong();
+                              List<Long> autoRoleIds = discordBotProperties.getAutoRoleIds();
+                              boolean hasAutoRoles = autoRoleIds != null && autoRoleIds.size() == 2;
+                              if (!hasAutoRoles) return Mono.empty();
+                              Long autoRoleId =
+                                  guildId == discordBotProperties.getGuildIds().getFirst()
+                                      ? autoRoleIds.getFirst()
+                                      : autoRoleIds.getLast();
+
+                              log.info(
+                                  "Assigning auto-role {} to new member {} ({}) in guild {}",
+                                  autoRoleId,
+                                  event.getMember().getUsername(),
+                                  event.getMember().getId().asLong(),
+                                  guildId);
+                              return event
+                                  .getMember()
+                                  .addRole(Snowflake.of(autoRoleId), "Auto-role on join")
+                                  .doOnError(
+                                      exception -> log.error("Failed to assign role", exception))
+                                  .onErrorResume(exception -> Mono.empty());
+                            })
+                        .then();
+
+                return Mono.when(
+                    slashCommandInteractionListener, slashCommandRegistration, autoRoleOnJoin);
               })
           .doOnSubscribe(__ -> log.info("Connecting to Discord gateway"))
           .doOnError(exception -> log.error("Discord gateway session error", exception))
@@ -99,6 +141,24 @@ public class DiscordBotConfiguration {
     boolean hasGuildIds = configuredGuildIds != null && !configuredGuildIds.isEmpty();
 
     if (hasGuildIds) {
+      List<Long> botGuildIds =
+          gateway.getGuilds().map(guild -> guild.getId().asLong()).collectList().block();
+      configuredGuildIds.removeIf(
+          guildId -> {
+            boolean isValidGuild = botGuildIds != null && !botGuildIds.contains(guildId);
+            if (!isValidGuild)
+              log.warn(
+                  "Bot is not a member of guild {}, skipping command registration for this guild",
+                  guildId);
+            return isValidGuild;
+          });
+
+      if (configuredGuildIds.isEmpty()) {
+        log.warn(
+            "No valid guild IDs configured after checking bot's guilds, skipping slash command registration");
+        return Mono.empty();
+      }
+
       log.info(
           "Registering {} slash command(s) for configured guild(s): {}",
           applicationCommandRequests.size(),

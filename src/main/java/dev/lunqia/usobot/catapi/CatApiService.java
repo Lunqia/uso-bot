@@ -7,22 +7,22 @@ import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Mono;
 
 public class CatApiService {
-  private final WebClient client;
+  private final WebClient webClient;
 
-  public CatApiService(WebClient.Builder builder, CatApiProperties properties) {
-    String apiKey = properties.getApiKey();
-    WebClient.Builder base =
-        builder
-            .baseUrl(properties.getBaseUrl())
+  public CatApiService(WebClient.Builder webClientBuilder, CatApiProperties catApiProperties) {
+    String catApiKey = catApiProperties.getApiKey();
+    webClientBuilder =
+        webClientBuilder
+            .baseUrl(catApiProperties.getBaseUrl())
             .defaultHeader(HttpHeaders.CONTENT_TYPE, "application/json");
 
-    if (StringUtils.hasText(apiKey)) base.defaultHeader("x-api-key", apiKey);
+    if (StringUtils.hasText(catApiKey)) webClientBuilder.defaultHeader("x-api-key", catApiKey);
 
-    client = base.build();
+    webClient = webClientBuilder.build();
   }
 
   public Mono<String> getRandomCatImageUrl() {
-    return client
+    return webClient
         .get()
         .uri(
             uri ->

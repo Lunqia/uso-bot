@@ -10,4 +10,5 @@ catapi:
 discord:
   bot:
     token: ${DISCORD_BOT_TOKEN:}
-    guild-ids: [1355913961312227549]
+    guild-ids: [ 1355913961312227549, 1355292916540510259 ]
+    auto-role-ids: [ 1416714044995403776, 1355305040058908793 ]
