@@ -67,7 +67,10 @@ public class FloraCommand implements SlashCommand {
   @Override
   public Mono<Void> handle(ChatInputInteractionEvent event) {
     if (!ALLOWED_USER_IDS.contains(event.getInteraction().getUser().getId().asLong()))
-      return event.createFollowup("❌ You don't look like Flora to me...").withEphemeral(true).then();
+      return event
+          .createFollowup("❌ You don't look like Flora to me...")
+          .withEphemeral(true)
+          .then();
 
     int choice = RANDOM.nextInt(5);
     String response;
