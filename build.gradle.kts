@@ -9,6 +9,8 @@ version = "0.0.1-SNAPSHOT"
 description = "uso-bot"
 
 val discord4jVersion: String by project
+val commonsLang3Version: String by project
+val commonsTextVersion: String by project
 
 java {
     toolchain {
@@ -31,6 +33,8 @@ dependencies {
     implementation("org.springframework.boot:spring-boot-starter-data-mongodb-reactive")
     implementation("org.springframework.boot:spring-boot-starter-webclient")
     implementation("com.discord4j:discord4j-core:$discord4jVersion")
+    implementation("org.apache.commons:commons-lang3:$commonsLang3Version")
+    implementation("org.apache.commons:commons-text:$commonsTextVersion")
     compileOnly("org.projectlombok:lombok")
     developmentOnly("org.springframework.boot:spring-boot-devtools")
     developmentOnly("org.springframework.boot:spring-boot-docker-compose")

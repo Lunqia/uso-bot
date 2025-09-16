@@ -1,21 +1,29 @@
 services:
   mongodb:
     image: 'mongo:latest'
+    container_name: uso-mongodb
     environment:
       - MONGO_INITDB_DATABASE=uso
       - MONGO_INITDB_ROOT_USERNAME=root
       - MONGO_INITDB_ROOT_PASSWORD=rootpassword
+    volumes:
+      - mongo-data:/data/db
     networks:
       - backend
 
   spring-app:
     build: ./
+    container_name: uso-spring-app
     environment:
       - SPRING_DATA_MONGODB_URI=mongodb://root:rootpassword@mongodb:27017/uso?authSource=admin
-    networks:
-      - backend
     depends_on:
       - mongodb
+    networks:
+      - backend
+    restart: unless-stopped
+
+volumes:
+  mongo-data:
 
 networks:
   backend:

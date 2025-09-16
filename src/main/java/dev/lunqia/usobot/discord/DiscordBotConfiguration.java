@@ -7,6 +7,9 @@ import discord4j.core.DiscordClient;
 import discord4j.core.GatewayDiscordClient;
 import discord4j.core.event.domain.guild.MemberJoinEvent;
 import discord4j.core.event.domain.interaction.ChatInputInteractionEvent;
+import discord4j.core.event.domain.lifecycle.ConnectEvent;
+import discord4j.core.object.presence.ClientActivity;
+import discord4j.core.object.presence.ClientPresence;
 import discord4j.discordjson.json.ApplicationCommandRequest;
 import discord4j.gateway.intent.Intent;
 import discord4j.gateway.intent.IntentSet;
@@ -47,6 +50,20 @@ public class DiscordBotConfiguration {
           .withGateway(
               gateway -> {
                 log.info("Discord gateway session starting, attaching listeners");
+
+                Mono<Void> setCustomPresence =
+                    gateway
+                        .on(ConnectEvent.class)
+                        .flatMap(
+                            event ->
+                                event
+                                    .getClient()
+                                    .updatePresence(
+                                        ClientPresence.online(
+                                            ClientActivity.custom("Pocketing you")))
+                                    .doOnSubscribe(__ -> log.info("Setting custom bot presence"))
+                                    .then())
+                        .then();
 
                 Mono<Void> slashCommandInteractionListener =
                     gateway
@@ -109,7 +126,10 @@ public class DiscordBotConfiguration {
                         .then();
 
                 return Mono.when(
-                    slashCommandInteractionListener, slashCommandRegistration, autoRoleOnJoin);
+                    setCustomPresence,
+                    slashCommandInteractionListener,
+                    slashCommandRegistration,
+                    autoRoleOnJoin);
               })
           .doOnSubscribe(__ -> log.info("Connecting to Discord gateway"))
           .doOnError(exception -> log.error("Discord gateway session error", exception))
