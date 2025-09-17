@@ -7,7 +7,9 @@ import dev.lunqia.usobot.overwatch2.OverfastApiEndpointType;
 import dev.lunqia.usobot.overwatch2.OverfastApiError;
 import dev.lunqia.usobot.overwatch2.player.stats.summary.PlayerStatsSummary;
 import dev.lunqia.usobot.overwatch2.player.summary.PlayerSummary;
+import dev.lunqia.usobot.utils.HttpUtils;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
@@ -29,6 +31,7 @@ public class PlayerService {
     this.webClient =
         webClientBuilder
             .baseUrl(OverfastApiEndpointType.BASE_URL)
+            .defaultHeader(HttpHeaders.USER_AGENT, HttpUtils.USER_AGENT)
             .defaultHeaders(
                 headers ->
                     headers.setAccept(MediaType.parseMediaTypes(MediaType.APPLICATION_JSON_VALUE)))
@@ -50,7 +53,6 @@ public class PlayerService {
         600);
   }
 
-  @SuppressWarnings("unchecked")
   private <T> Mono<T> fetchWithCache(
       OverfastApiEndpointType endpointType,
       String playerId,
@@ -65,8 +67,6 @@ public class PlayerService {
         .retrieve()
         .bodyToMono(responseType)
         .doOnNext(t -> overfastApiCache.put(endpointType, playerId, t, ttlSeconds))
-        .onErrorResume(throwable -> Mono.just((T) handleError(throwable)))
-        .cast(responseType)
         .publishOn(Schedulers.boundedElastic());
   }
 

@@ -108,9 +108,13 @@ public class PlayerStatsSubCommand implements SlashSubCommand {
   private Mono<Void> fetchAndReplyWithStats(ChatInputInteractionEvent event, String battleTag) {
     String playerId = battleTag.trim().replace("#", "-");
     Mono<PlayerSummary> playerSummaryMono =
-        playerService.getPlayerSummary(playerId).onErrorResume(exception -> Mono.empty());
+        playerService
+            .getPlayerSummary(playerId)
+            .switchIfEmpty(Mono.just(PlayerSummary.builder().build()));
     Mono<PlayerStatsSummary> playerStatsMono =
-        playerService.getPlayerStatsSummary(playerId).onErrorResume(exception -> Mono.empty());
+        playerService
+            .getPlayerStatsSummary(playerId)
+            .switchIfEmpty(Mono.just(PlayerStatsSummary.builder().build()));
 
     return Mono.zip(
             playerSummaryMono.switchIfEmpty(Mono.just(PlayerSummary.builder().build())),
@@ -153,9 +157,7 @@ public class PlayerStatsSubCommand implements SlashSubCommand {
                           .color(Color.RED)
                           .title("❌ Error")
                           .description(
-                              "Error fetching data:\n```java\n"
-                                  + overfastApiError.message()
-                                  + "\n```")
+                              "Error fetching data:\n```\n" + overfastApiError.message() + "\n```")
                           .build())
                   .then();
             });
