@@ -12,7 +12,7 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @NoArgsConstructor
 @JsonIgnoreProperties(ignoreUnknown = true)
-public final class PlayerSummary implements PlayerSummaryLike {
+public class PlayerSummary {
   private String username;
   private String avatar;
   private String namecard;
