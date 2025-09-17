@@ -1,7 +1,7 @@
 package dev.lunqia.usobot.discord.command.commands;
 
-import dev.lunqia.usobot.animalapi.AnimalApiService;
-import dev.lunqia.usobot.animalapi.AnimalType;
+import dev.lunqia.usobot.animal.AnimalApiService;
+import dev.lunqia.usobot.animal.AnimalType;
 import dev.lunqia.usobot.discord.command.SlashCommand;
 import discord4j.core.event.domain.interaction.ChatInputInteractionEvent;
 import discord4j.core.object.command.ApplicationCommandInteractionOptionValue;
@@ -52,8 +52,6 @@ public class AnimalCommand implements SlashCommand {
                                 .name(animalType.getFriendlyName())
                                 .value(animalType.getApiName())
                                 .build())
-                    .toList()
-                    .stream()
                     .map(ApplicationCommandOptionChoiceData.class::cast)
                     .toList())
             .build());

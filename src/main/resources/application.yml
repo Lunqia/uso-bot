@@ -3,9 +3,6 @@ spring:
     name: uso-bot
   mongodb:
     uri: ${SPRING_DATA_MONGODB_URI}
-owapi:
-  base-url: https://owapi.eu
-  request-timeout-seconds: 10
 discord:
   bot:
     token: ${DISCORD_BOT_TOKEN:}

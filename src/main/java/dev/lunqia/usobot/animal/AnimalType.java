@@ -1,4 +1,4 @@
-package dev.lunqia.usobot.animalapi;
+package dev.lunqia.usobot.animal;
 
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;

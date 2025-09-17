@@ -1,4 +1,4 @@
-package dev.lunqia.usobot.animalapi;
+package dev.lunqia.usobot.animal;
 
 import lombok.Data;
 import org.springframework.boot.context.properties.ConfigurationProperties;

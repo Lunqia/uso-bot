@@ -1,4 +1,4 @@
-package dev.lunqia.usobot.overwatch.model;
+package dev.lunqia.usobot.overwatch2.link;
 
 import lombok.Builder;
 import lombok.Data;
@@ -11,5 +11,4 @@ import org.springframework.data.mongodb.core.mapping.Document;
 public class UserLink {
   @Id private String discordId;
   private String battleTag;
-  private PlatformType platformType;
 }
