@@ -8,12 +8,14 @@ import discord4j.core.GatewayDiscordClient;
 import discord4j.core.event.domain.guild.MemberJoinEvent;
 import discord4j.core.event.domain.interaction.ChatInputInteractionEvent;
 import discord4j.core.event.domain.lifecycle.ConnectEvent;
+import discord4j.core.event.domain.message.MessageCreateEvent;
 import discord4j.core.object.presence.ClientActivity;
 import discord4j.core.object.presence.ClientPresence;
 import discord4j.discordjson.json.ApplicationCommandRequest;
 import discord4j.gateway.intent.Intent;
 import discord4j.gateway.intent.IntentSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.ApplicationRunner;
@@ -125,11 +127,40 @@ public class DiscordBotConfiguration {
                             })
                         .then();
 
+                Mono<Void> messageListener =
+                    gateway
+                        .on(MessageCreateEvent.class)
+                        .doOnSubscribe(__ -> log.info("Subscribed to MessageCreateEvent stream"))
+                        .flatMap(
+                            event -> {
+                              String content =
+                                  event.getMessage().getContent().toLowerCase(Locale.ROOT);
+                              if (event.getGuildId().isEmpty()) return Mono.empty();
+                              if (event.getMember().isEmpty()) return Mono.empty();
+                              if (event.getMember().get().getId().asLong() != 647710846595629057L)
+                                return Mono.empty();
+
+                              if (content.contains("6") && content.contains("7")
+                                  || content.contains("six") && content.contains("7")
+                                  || content.contains("6") && content.contains("seven")
+                                  || content.contains("67")
+                                  || (content.contains("six") && content.contains("seven"))) {
+                                return event
+                                    .getMessage()
+                                    .getChannel()
+                                    .flatMap(channel -> channel.createMessage("Bad Abby! Shoo!"))
+                                    .then();
+                              }
+                              return Mono.empty();
+                            })
+                        .then();
+
                 return Mono.when(
                     setCustomPresence,
                     slashCommandInteractionListener,
                     slashCommandRegistration,
-                    autoRoleOnJoin);
+                    autoRoleOnJoin,
+                    messageListener);
               })
           .doOnSubscribe(__ -> log.info("Connecting to Discord gateway"))
           .doOnError(exception -> log.error("Discord gateway session error", exception))
