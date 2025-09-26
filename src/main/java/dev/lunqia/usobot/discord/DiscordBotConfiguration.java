@@ -2,20 +2,14 @@ package dev.lunqia.usobot.discord;
 
 import dev.lunqia.usobot.discord.command.SlashCommand;
 import dev.lunqia.usobot.discord.command.SlashCommandDispatcher;
-import discord4j.common.util.Snowflake;
+import dev.lunqia.usobot.discord.listener.EventListener;
 import discord4j.core.DiscordClient;
 import discord4j.core.GatewayDiscordClient;
-import discord4j.core.event.domain.guild.MemberJoinEvent;
-import discord4j.core.event.domain.interaction.ChatInputInteractionEvent;
-import discord4j.core.event.domain.lifecycle.ConnectEvent;
-import discord4j.core.event.domain.message.MessageCreateEvent;
-import discord4j.core.object.presence.ClientActivity;
-import discord4j.core.object.presence.ClientPresence;
+import discord4j.core.event.domain.Event;
 import discord4j.discordjson.json.ApplicationCommandRequest;
 import discord4j.gateway.intent.Intent;
 import discord4j.gateway.intent.IntentSet;
 import java.util.List;
-import java.util.Locale;
 import java.util.Map;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.ApplicationRunner;
@@ -30,8 +24,10 @@ import reactor.core.publisher.Mono;
 @Slf4j
 public class DiscordBotConfiguration {
   @Bean
-  public ApplicationRunner discordBotRunner(
-      DiscordBotProperties discordBotProperties, SlashCommandDispatcher slashCommandDispatcher) {
+  public <T extends Event> ApplicationRunner discordBotRunner(
+      DiscordBotProperties discordBotProperties,
+      SlashCommandDispatcher slashCommandDispatcher,
+      List<EventListener<T>> eventListeners) {
     return args -> {
       if (discordBotProperties.getToken() == null || discordBotProperties.getToken().isBlank()) {
         log.warn("Discord bot token is missing, set {DISCORD_BOT_TOKEN} first");
@@ -39,138 +35,41 @@ public class DiscordBotConfiguration {
         return;
       }
 
-      DiscordClient client = DiscordClient.create(discordBotProperties.getToken());
+      GatewayDiscordClient gatewayDiscordClient =
+          DiscordClient.create(discordBotProperties.getToken())
+              .gateway()
+              .setEnabledIntents(
+                  IntentSet.of(
+                      Intent.GUILDS,
+                      Intent.GUILD_MEMBERS,
+                      Intent.GUILD_MESSAGES,
+                      Intent.MESSAGE_CONTENT))
+              .login()
+              .block();
 
-      client
-          .gateway()
-          .setEnabledIntents(
-              IntentSet.of(
-                  Intent.GUILDS,
-                  Intent.GUILD_MEMBERS,
-                  Intent.GUILD_MESSAGES,
-                  Intent.MESSAGE_CONTENT))
-          .withGateway(
-              gateway -> {
-                log.info("Discord gateway session starting, attaching listeners");
+      if (gatewayDiscordClient == null) {
+        log.error("Failed to connect to Discord");
+        return;
+      }
 
-                Mono<Void> setCustomPresence =
-                    gateway
-                        .on(ConnectEvent.class)
-                        .flatMap(
-                            event ->
-                                event
-                                    .getClient()
-                                    .updatePresence(
-                                        ClientPresence.online(
-                                            ClientActivity.custom("Pocketing you")))
-                                    .doOnSubscribe(__ -> log.info("Setting custom bot presence"))
-                                    .then())
-                        .then();
+      log.info("Registering {} event listeners", eventListeners.size());
 
-                Mono<Void> slashCommandInteractionListener =
-                    gateway
-                        .on(ChatInputInteractionEvent.class)
-                        .doOnSubscribe(
-                            __ -> log.info("Subscribed to ChatInputInteractionEvent stream"))
-                        .flatMap(
-                            event ->
-                                event.deferReply().then(slashCommandDispatcher.dispatch(event)))
-                        .onErrorResume(
-                            exception -> {
-                              log.error("Error while processing interaction event", exception);
-                              return Mono.empty();
-                            })
-                        .then();
+      eventListeners.forEach(
+          eventListener ->
+              gatewayDiscordClient
+                  .on(eventListener.getEventType())
+                  .flatMap(eventListener::execute)
+                  .onErrorResume(eventListener::handleException)
+                  .subscribe());
 
-                Mono<Void> slashCommandRegistration =
-                    Mono.defer(
-                            () -> {
-                              log.info("Starting slash command registration");
-                              return registerSlashCommands(
-                                  gateway, slashCommandDispatcher, discordBotProperties);
-                            })
-                        .onErrorResume(
-                            exception -> {
-                              log.error(
-                                  "Error during slash command registration pipeline", exception);
-                              return Mono.empty();
-                            })
-                        .then();
-
-                Mono<Void> autoRoleOnJoin =
-                    gateway
-                        .on(MemberJoinEvent.class)
-                        .doOnSubscribe(__ -> log.info("Subscribed to MemberJoinEvent stream"))
-                        .flatMap(
-                            event -> {
-                              long guildId = event.getGuildId().asLong();
-                              List<Long> autoRoleIds = discordBotProperties.getAutoRoleIds();
-                              boolean hasAutoRoles = autoRoleIds != null && autoRoleIds.size() == 2;
-                              if (!hasAutoRoles) return Mono.empty();
-                              Long autoRoleId =
-                                  guildId == discordBotProperties.getGuildIds().getFirst()
-                                      ? autoRoleIds.getFirst()
-                                      : autoRoleIds.getLast();
-
-                              log.info(
-                                  "Assigning auto-role {} to new member {} ({}) in guild {}",
-                                  autoRoleId,
-                                  event.getMember().getUsername(),
-                                  event.getMember().getId().asLong(),
-                                  guildId);
-                              return event
-                                  .getMember()
-                                  .addRole(Snowflake.of(autoRoleId), "Auto-role on join")
-                                  .doOnError(
-                                      exception -> log.error("Failed to assign role", exception))
-                                  .onErrorResume(exception -> Mono.empty());
-                            })
-                        .then();
-
-                Mono<Void> messageListener =
-                    gateway
-                        .on(MessageCreateEvent.class)
-                        .doOnSubscribe(__ -> log.info("Subscribed to MessageCreateEvent stream"))
-                        .flatMap(
-                            event -> {
-                              String content =
-                                  event.getMessage().getContent().toLowerCase(Locale.ROOT);
-                              if (event.getGuildId().isEmpty()) return Mono.empty();
-                              if (event.getMember().isEmpty()) return Mono.empty();
-                              if (event.getMember().get().getId().asLong() != 647710846595629057L)
-                                return Mono.empty();
-
-                              if (content.contains("6") && content.contains("7")
-                                  || content.contains("six") && content.contains("7")
-                                  || content.contains("6") && content.contains("seven")
-                                  || content.contains("67")
-                                  || (content.contains("six") && content.contains("seven"))) {
-                                return event
-                                    .getMessage()
-                                    .getChannel()
-                                    .flatMap(channel -> channel.createMessage("Bad Abby! Shoo!"))
-                                    .then();
-                              }
-                              return Mono.empty();
-                            })
-                        .then();
-
-                return Mono.when(
-                    setCustomPresence,
-                    slashCommandInteractionListener,
-                    slashCommandRegistration,
-                    autoRoleOnJoin,
-                    messageListener);
-              })
-          .doOnSubscribe(__ -> log.info("Connecting to Discord gateway"))
-          .doOnError(exception -> log.error("Discord gateway session error", exception))
-          .doOnTerminate(() -> log.info("Discord gateway session terminated"))
+      registerSlashCommands(gatewayDiscordClient, slashCommandDispatcher, discordBotProperties)
+          .doOnSubscribe(__ -> log.info("Starting slash command registration"))
           .subscribe();
     };
   }
 
   private Mono<Void> registerSlashCommands(
-      GatewayDiscordClient gateway,
+      GatewayDiscordClient gatewayDiscordClient,
       SlashCommandDispatcher slashCommandDispatcher,
       DiscordBotProperties discordBotProperties) {
     Map<String, SlashCommand> slashCommandMap = slashCommandDispatcher.getSlashCommandMap();
@@ -187,13 +86,17 @@ public class DiscordBotConfiguration {
                 immutableApplicationCommandRequest -> immutableApplicationCommandRequest)
             .toList();
 
-    Mono<Long> applicationId = gateway.getRestClient().getApplicationId();
+    Mono<Long> applicationId = gatewayDiscordClient.getRestClient().getApplicationId();
     List<Long> configuredGuildIds = discordBotProperties.getGuildIds();
     boolean hasGuildIds = configuredGuildIds != null && !configuredGuildIds.isEmpty();
 
     if (hasGuildIds) {
       List<Long> botGuildIds =
-          gateway.getGuilds().map(guild -> guild.getId().asLong()).collectList().block();
+          gatewayDiscordClient
+              .getGuilds()
+              .map(guild -> guild.getId().asLong())
+              .collectList()
+              .block();
       configuredGuildIds.removeIf(
           guildId -> {
             boolean isValidGuild = botGuildIds != null && !botGuildIds.contains(guildId);
@@ -221,7 +124,7 @@ public class DiscordBotConfiguration {
                   Flux.fromIterable(configuredGuildIds)
                       .flatMap(
                           guildId ->
-                              gateway
+                              gatewayDiscordClient
                                   .getRestClient()
                                   .getApplicationService()
                                   .bulkOverwriteGuildApplicationCommand(
