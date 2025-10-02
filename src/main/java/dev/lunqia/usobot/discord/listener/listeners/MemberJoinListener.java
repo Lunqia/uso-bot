@@ -32,6 +32,8 @@ public class MemberJoinListener implements EventListener<MemberJoinEvent> {
         guildId == discordBotProperties.getGuildIds().getFirst()
             ? autoRoleIds.getFirst()
             : autoRoleIds.getLast();
+    if (guildId != discordBotProperties.getGuildIds().getFirst()
+        && guildId != discordBotProperties.getGuildIds().get(1)) return Mono.empty();
 
     log.info(
         "Assigning auto-role {} to new member {} ({}) in guild {}",

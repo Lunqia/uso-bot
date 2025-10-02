@@ -6,7 +6,7 @@ spring:
 discord:
   bot:
     token: ${DISCORD_BOT_TOKEN:}
-    guild-ids: [ 1355913961312227549, 1355292916540510259 ]
+    guild-ids: [ 1355913961312227549, 1355292916540510259, 1423000271029796906 ]
     auto-role-ids: [ 1416714044995403776, 1355305040058908793 ]
 animal-api:
   base-url: https://api.animality.xyz
