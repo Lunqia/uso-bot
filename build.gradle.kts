@@ -1,6 +1,6 @@
 plugins {
     java
-    id("org.springframework.boot") version "4.0.0-SNAPSHOT"
+    id("org.springframework.boot") version "4.0.0-restructure-SNAPSHOT"
     id("io.spring.dependency-management") version "1.1.7"
 }
 
@@ -32,11 +32,11 @@ repositories {
 
 dependencies {
     implementation("org.springframework.boot:spring-boot-starter-data-mongodb-reactive")
-    implementation("org.springframework.boot:spring-boot-starter-webclient")
     implementation("com.discord4j:discord4j-core:$discord4jVersion")
     implementation("org.apache.commons:commons-lang3:$commonsLang3Version")
     implementation("org.apache.commons:commons-text:$commonsTextVersion")
     implementation("com.github.ben-manes.caffeine:caffeine:$caffeineVersion")
+    implementation("org.springframework.boot:spring-boot-starter-webflux")
     compileOnly("org.projectlombok:lombok")
     developmentOnly("org.springframework.boot:spring-boot-devtools")
     developmentOnly("org.springframework.boot:spring-boot-docker-compose")

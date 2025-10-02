@@ -1,6 +1,6 @@
 package dev.lunqia.usobot.animal;
 
-import java.util.Objects;
+import dev.lunqia.usobot.utils.HttpUtils;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.http.HttpHeaders;
 import org.springframework.stereotype.Service;
@@ -12,11 +12,11 @@ import reactor.core.publisher.Mono;
 public class AnimalApiService {
   private final WebClient webClient;
 
-  public AnimalApiService(
-      WebClient.Builder webClientBuilder, AnimalApiProperties animalApiProperties) {
-    this.webClient =
-        webClientBuilder
+  public AnimalApiService(AnimalApiProperties animalApiProperties) {
+    webClient =
+        WebClient.builder()
             .baseUrl(animalApiProperties.getBaseUrl())
+            .defaultHeader(HttpHeaders.USER_AGENT, HttpUtils.USER_AGENT)
             .defaultHeader(HttpHeaders.CONTENT_TYPE, "application/json")
             .build();
   }
@@ -27,8 +27,7 @@ public class AnimalApiService {
         .uri("/img/{animal}", animalType.getApiName())
         .retrieve()
         .bodyToMono(AnimalResponse.class)
-        .map(AnimalResponse::image)
-        .filter(Objects::nonNull);
+        .map(AnimalResponse::image);
   }
 
   public Mono<String> getRandomAnimalFact(AnimalType animalType) {
@@ -37,8 +36,7 @@ public class AnimalApiService {
         .uri("/fact/{animal}", animalType.getApiName())
         .retrieve()
         .bodyToMono(AnimalResponse.class)
-        .map(AnimalResponse::fact)
-        .filter(Objects::nonNull);
+        .map(AnimalResponse::fact);
   }
 
   public Mono<AnimalResponse> getRandomAnimalImageAndFact(AnimalType animalType) {

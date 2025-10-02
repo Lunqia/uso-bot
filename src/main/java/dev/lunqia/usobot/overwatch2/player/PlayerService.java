@@ -24,12 +24,9 @@ public class PlayerService {
   private final OverfastApiCache overfastApiCache;
   private final ObjectMapper objectMapper;
 
-  public PlayerService(
-      WebClient.Builder webClientBuilder,
-      OverfastApiCache overfastApiCache,
-      ObjectMapper objectMapper) {
-    this.webClient =
-        webClientBuilder
+  public PlayerService(OverfastApiCache overfastApiCache, ObjectMapper objectMapper) {
+    webClient =
+        WebClient.builder()
             .baseUrl(OverfastApiEndpointType.BASE_URL)
             .defaultHeader(HttpHeaders.USER_AGENT, HttpUtils.USER_AGENT)
             .defaultHeaders(
