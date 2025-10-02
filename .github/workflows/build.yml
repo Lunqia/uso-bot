@@ -44,10 +44,24 @@ jobs:
     if: github.ref == 'refs/heads/master'
 
     steps:
+      - name: Checkout code
+        uses: actions/checkout@v5
+
       - name: Download JAR artifact
         uses: actions/download-artifact@v5
         with:
           name: uso-bot
+
+      - name: Configure Git for tagging
+        run: |
+          git config user.name "github-actions"
+          git config user.email "github-actions@github.com"
+
+      - name: Create Git tag
+        run: |
+          TAG="v${{ github.run_number }}"
+          git tag -a $TAG -m "Release $TAG"
+          git push origin $TAG
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@6cbd405e2c4e67a21c47fa9e383d020e4e28b836
@@ -57,4 +71,4 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           RELEASE_TAG: v${{ github.run_number }}
           RELEASE_NAME: Release v${{ github.run_number }}
-          RELEASE_BODY: Automated release of uso-bot version v${{ github.run_number }}'
+          RELEASE_BODY: Automated release of uso-bot version v${{ github.run_number }}
