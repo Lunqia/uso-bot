@@ -53,3 +53,8 @@ jobs:
         uses: softprops/action-gh-release@6cbd405e2c4e67a21c47fa9e383d020e4e28b836
         with:
           files: uso-bot.jar
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          RELEASE_TAG: v${{ github.run_number }}
+          RELEASE_NAME: Release v${{ github.run_number }}
+          RELEASE_BODY: Automated release of uso-bot version v${{ github.run_number }}'
