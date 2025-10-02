@@ -39,7 +39,7 @@ public class ButtonDispatcher {
               buttonId,
               event.getInteraction().getUser().getUsername(),
               event.getInteraction().getUser().getId().asString(),
-              event.getInteraction().getGuildId().map(Snowflake::asString).orElse("DM"));
+              event.getInteraction().getGuildId().map(Snowflake::asString));
 
           return button.handle(event);
         });

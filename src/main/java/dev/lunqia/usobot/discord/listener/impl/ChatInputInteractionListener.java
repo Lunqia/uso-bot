@@ -27,7 +27,7 @@ public class ChatInputInteractionListener implements EventListener<ChatInputInte
         .onErrorResume(
             exception -> {
               log.error("Error while processing ChatInputInteractionEvent", exception);
-              return Mono.empty();
+              return Mono.error(exception);
             });
   }
 }

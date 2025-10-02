@@ -48,7 +48,7 @@ public class MemberJoinListener implements EventListener<MemberJoinEvent> {
         .onErrorResume(
             exception -> {
               log.error("Failed to assign role", exception);
-              return Mono.empty();
+              return Mono.error(exception);
             });
   }
 }

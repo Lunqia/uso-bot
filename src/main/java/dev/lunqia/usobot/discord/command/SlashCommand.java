@@ -13,4 +13,12 @@ public interface SlashCommand {
   List<ApplicationCommandOptionData> options();
 
   Mono<Void> handle(ChatInputInteractionEvent event);
+
+  default String defaultMemberPermissions() {
+    return "0";
+  }
+
+  default boolean dmPermission() {
+    return false;
+  }
 }

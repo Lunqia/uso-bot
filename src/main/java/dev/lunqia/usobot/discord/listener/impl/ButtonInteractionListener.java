@@ -28,7 +28,7 @@ public class ButtonInteractionListener implements EventListener<ButtonInteractio
         .onErrorResume(
             exception -> {
               log.error("Error while processing ButtonInteractionEvent", exception);
-              return Mono.empty();
+              return Mono.error(exception);
             });
   }
 }

@@ -85,6 +85,8 @@ public class DiscordBotConfiguration {
                         .name(slashCommand.name())
                         .description(slashCommand.description())
                         .options(slashCommand.options())
+                        .defaultMemberPermissions(slashCommand.defaultMemberPermissions())
+                        .dmPermission(slashCommand.dmPermission())
                         .build())
             .<ApplicationCommandRequest>map(
                 immutableApplicationCommandRequest -> immutableApplicationCommandRequest)
