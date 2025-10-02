@@ -5,7 +5,7 @@ plugins {
 }
 
 group = "dev.lunqia"
-version = "0.0.1-SNAPSHOT"
+version = "1.0.0-SNAPSHOT"
 description = "uso-bot"
 
 val discord4jVersion: String by project

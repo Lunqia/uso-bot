@@ -1,4 +1,4 @@
-package dev.lunqia.usobot.discord.command.commands;
+package dev.lunqia.usobot.discord.command.impl;
 
 import dev.lunqia.usobot.discord.command.SlashCommand;
 import discord4j.core.event.domain.interaction.ChatInputInteractionEvent;

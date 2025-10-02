@@ -1,4 +1,4 @@
-package dev.lunqia.usobot.discord;
+package dev.lunqia.usobot.discord.config;
 
 import java.util.List;
 import lombok.Getter;

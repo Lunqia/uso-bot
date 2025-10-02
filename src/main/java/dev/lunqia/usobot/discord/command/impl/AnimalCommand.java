@@ -1,4 +1,4 @@
-package dev.lunqia.usobot.discord.command.commands;
+package dev.lunqia.usobot.discord.command.impl;
 
 import dev.lunqia.usobot.animal.AnimalApiService;
 import dev.lunqia.usobot.animal.AnimalType;

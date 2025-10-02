@@ -30,12 +30,11 @@ public class SlashCommandDispatcher {
         () -> {
           String commandName = event.getCommandName();
           SlashCommand slashCommand = slashCommandMap.get(commandName);
-          if (slashCommand == null) {
+          if (slashCommand == null)
             return event
                 .editReply()
                 .withContent(Possible.of(Optional.of("Unknown slash command, please report this.")))
                 .then();
-          }
 
           String optionsLog =
               event.getOptions().stream()

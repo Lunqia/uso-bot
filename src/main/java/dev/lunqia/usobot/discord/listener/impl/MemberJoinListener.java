@@ -1,6 +1,6 @@
-package dev.lunqia.usobot.discord.listener.listeners;
+package dev.lunqia.usobot.discord.listener.impl;
 
-import dev.lunqia.usobot.discord.DiscordBotProperties;
+import dev.lunqia.usobot.discord.config.DiscordBotProperties;
 import dev.lunqia.usobot.discord.listener.EventListener;
 import discord4j.common.util.Snowflake;
 import discord4j.core.event.domain.guild.MemberJoinEvent;

@@ -1,4 +1,4 @@
-package dev.lunqia.usobot.discord.command.commands;
+package dev.lunqia.usobot.discord.command.impl;
 
 import dev.lunqia.usobot.discord.command.SlashCommand;
 import dev.lunqia.usobot.overwatch2.link.UserLink;

@@ -1,7 +1,7 @@
-package dev.lunqia.usobot.overwatch2.link;
+package dev.lunqia.usobot.ticket;
 
 import org.springframework.data.mongodb.repository.ReactiveMongoRepository;
 import org.springframework.stereotype.Repository;
 
 @Repository
-public interface UserLinkRepository extends ReactiveMongoRepository<UserLink, String> {}
+public interface TicketRepository extends ReactiveMongoRepository<Ticket, String> {}

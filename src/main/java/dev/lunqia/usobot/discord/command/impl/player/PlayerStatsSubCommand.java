@@ -1,6 +1,6 @@
-package dev.lunqia.usobot.discord.command.commands.player;
+package dev.lunqia.usobot.discord.command.impl.player;
 
-import dev.lunqia.usobot.discord.EmojiConstants;
+import dev.lunqia.usobot.discord.emoji.EmojiConstants;
 import dev.lunqia.usobot.discord.command.SlashSubCommand;
 import dev.lunqia.usobot.overwatch2.OverfastApiError;
 import dev.lunqia.usobot.overwatch2.link.UserLink;

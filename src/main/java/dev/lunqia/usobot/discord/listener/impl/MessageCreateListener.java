@@ -1,4 +1,4 @@
-package dev.lunqia.usobot.discord.listener.listeners;
+package dev.lunqia.usobot.discord.listener.impl;
 
 import dev.lunqia.usobot.discord.listener.EventListener;
 import discord4j.core.event.domain.message.MessageCreateEvent;
@@ -12,7 +12,7 @@ import reactor.core.publisher.Mono;
 
 @Component
 @Slf4j
-public class MessageListener implements EventListener<MessageCreateEvent> {
+public class MessageCreateListener implements EventListener<MessageCreateEvent> {
   @Override
   public Class<MessageCreateEvent> getEventType() {
     return MessageCreateEvent.class;
@@ -22,11 +22,10 @@ public class MessageListener implements EventListener<MessageCreateEvent> {
   public Mono<Void> execute(MessageCreateEvent event) {
     Message message = event.getMessage();
 
-    if (message.getContent().isBlank()
-        && (!message.getEmbeds().isEmpty() || !message.getAttachments().isEmpty()))
+    if (message.getType() != Message.Type.DEFAULT && message.getType() != Message.Type.REPLY)
       return Mono.empty();
 
-    String content = message.getContent().toLowerCase(Locale.ROOT);
+    String messageContent = message.getContent().toLowerCase(Locale.ROOT);
 
     if (event.getGuildId().isEmpty()) return Mono.empty();
 
@@ -34,15 +33,16 @@ public class MessageListener implements EventListener<MessageCreateEvent> {
     if (memberOptional.isEmpty()) return Mono.empty();
     if (memberOptional.get().getId().asLong() != 647710846595629057L) return Mono.empty();
 
-    if (content.contains("6") && content.contains("7")
-        || content.contains("six") && content.contains("7")
-        || content.contains("6") && content.contains("seven")
-        || content.contains("67")
-        || (content.contains("six") && content.contains("seven")))
+    if ((messageContent.contains("6") && messageContent.contains("7"))
+        || (messageContent.contains("six") && messageContent.contains("7"))
+        || (messageContent.contains("6") && messageContent.contains("seven"))
+        || messageContent.contains("67")
+        || (messageContent.contains("six") && messageContent.contains("seven"))) {
       return message
           .getChannel()
           .flatMap(channel -> channel.createMessage("Bad Abby! Shoo!"))
           .then();
+    }
 
     return Mono.empty();
   }

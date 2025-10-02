@@ -1,4 +1,4 @@
-package dev.lunqia.usobot.discord.listener.listeners;
+package dev.lunqia.usobot.discord.listener.impl;
 
 import dev.lunqia.usobot.discord.command.SlashCommandDispatcher;
 import dev.lunqia.usobot.discord.listener.EventListener;
@@ -11,7 +11,7 @@ import reactor.core.publisher.Mono;
 @Component
 @RequiredArgsConstructor
 @Slf4j
-public class SlashCommandListener implements EventListener<ChatInputInteractionEvent> {
+public class ChatInputInteractionListener implements EventListener<ChatInputInteractionEvent> {
   private final SlashCommandDispatcher slashCommandDispatcher;
 
   @Override
@@ -26,7 +26,7 @@ public class SlashCommandListener implements EventListener<ChatInputInteractionE
         .then(slashCommandDispatcher.dispatch(event))
         .onErrorResume(
             exception -> {
-              log.error("Error while processing interaction event", exception);
+              log.error("Error while processing ChatInputInteractionEvent", exception);
               return Mono.empty();
             });
   }

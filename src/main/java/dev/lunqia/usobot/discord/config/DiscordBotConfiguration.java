@@ -1,4 +1,4 @@
-package dev.lunqia.usobot.discord;
+package dev.lunqia.usobot.discord.config;
 
 import dev.lunqia.usobot.discord.command.SlashCommand;
 import dev.lunqia.usobot.discord.command.SlashCommandDispatcher;
@@ -6,6 +6,8 @@ import dev.lunqia.usobot.discord.listener.EventListener;
 import discord4j.core.DiscordClient;
 import discord4j.core.GatewayDiscordClient;
 import discord4j.core.event.domain.Event;
+import discord4j.core.object.presence.ClientActivity;
+import discord4j.core.object.presence.ClientPresence;
 import discord4j.discordjson.json.ApplicationCommandRequest;
 import discord4j.gateway.intent.Intent;
 import discord4j.gateway.intent.IntentSet;
@@ -44,6 +46,8 @@ public class DiscordBotConfiguration {
                       Intent.GUILD_MEMBERS,
                       Intent.GUILD_MESSAGES,
                       Intent.MESSAGE_CONTENT))
+              .setInitialPresence(
+                  __ -> ClientPresence.online(ClientActivity.custom("Pocketing you")))
               .login()
               .block();
 
@@ -91,28 +95,6 @@ public class DiscordBotConfiguration {
     boolean hasGuildIds = configuredGuildIds != null && !configuredGuildIds.isEmpty();
 
     if (hasGuildIds) {
-      List<Long> botGuildIds =
-          gatewayDiscordClient
-              .getGuilds()
-              .map(guild -> guild.getId().asLong())
-              .collectList()
-              .block();
-      configuredGuildIds.removeIf(
-          guildId -> {
-            boolean isValidGuild = botGuildIds != null && !botGuildIds.contains(guildId);
-            if (!isValidGuild)
-              log.warn(
-                  "Bot is not a member of guild {}, skipping slash command registration for this guild",
-                  guildId);
-            return isValidGuild;
-          });
-
-      if (configuredGuildIds.isEmpty()) {
-        log.warn(
-            "No valid guild IDs configured after checking bot's guilds, skipping slash command registration");
-        return Mono.empty();
-      }
-
       log.info(
           "Registering {} slash command(s) for configured guild(s): {}",
           applicationCommandRequests.size(),

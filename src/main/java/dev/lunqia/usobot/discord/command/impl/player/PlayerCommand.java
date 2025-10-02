@@ -1,4 +1,4 @@
-package dev.lunqia.usobot.discord.command.commands.player;
+package dev.lunqia.usobot.discord.command.impl.player;
 
 import dev.lunqia.usobot.discord.command.SlashCommand;
 import dev.lunqia.usobot.discord.command.SlashSubCommand;

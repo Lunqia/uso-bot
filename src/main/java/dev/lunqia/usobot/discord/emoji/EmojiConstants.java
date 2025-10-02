@@ -1,4 +1,4 @@
-package dev.lunqia.usobot.discord;
+package dev.lunqia.usobot.discord.emoji;
 
 import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
