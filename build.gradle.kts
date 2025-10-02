@@ -50,3 +50,11 @@ dependencies {
 tasks.withType<Test> {
     useJUnitPlatform()
 }
+
+tasks.jar {
+    archiveFileName.set("uso-bot.jar")
+}
+
+tasks.bootJar {
+    archiveFileName.set("uso-bot.jar")
+}
