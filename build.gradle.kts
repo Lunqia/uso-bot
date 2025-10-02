@@ -52,9 +52,10 @@ tasks.withType<Test> {
 }
 
 tasks.jar {
-    archiveFileName.set("uso-bot.jar")
+    enabled = false
 }
 
 tasks.bootJar {
     archiveFileName.set("uso-bot.jar")
 }
+
