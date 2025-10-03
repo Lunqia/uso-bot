@@ -70,9 +70,7 @@ public class SendButtonCommand implements SlashCommand {
             .map(ApplicationCommandInteractionOptionValue::asString)
             .orElse(null);
 
-    if (buttonId == null) {
-      return event.createFollowup("Button ID is required.").then();
-    }
+    if (buttonId == null) return event.createFollowup("Button ID is required.").then();
 
     Optional<ButtonType> buttonTypeOptional = ButtonType.fromId(buttonId);
     return buttonTypeOptional

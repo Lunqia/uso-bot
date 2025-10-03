@@ -1,5 +1,6 @@
 package dev.lunqia.usobot.ticket;
 
+import discord4j.common.util.Snowflake;
 import discord4j.core.event.domain.interaction.ButtonInteractionEvent;
 import discord4j.core.object.PermissionOverwrite;
 import discord4j.core.spec.TextChannelCreateSpec;
@@ -56,5 +57,10 @@ public class TicketService {
                           ticketRepository.save(
                               ticketBuilder.channelId(textChannel.getId().asLong()).build()));
             });
+  }
+
+  public Mono<Boolean> canOpenTicket(Snowflake userId, Snowflake guildId) {
+    return ticketRepository.existsByUserIdAndGuildIdAndStatus(
+        userId.asLong(), guildId.asLong(), Ticket.Status.OPEN);
   }
 }
