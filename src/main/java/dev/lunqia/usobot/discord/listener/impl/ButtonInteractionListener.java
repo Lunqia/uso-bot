@@ -3,7 +3,6 @@ package dev.lunqia.usobot.discord.listener.impl;
 import dev.lunqia.usobot.discord.button.ButtonDispatcher;
 import dev.lunqia.usobot.discord.listener.EventListener;
 import discord4j.core.event.domain.interaction.ButtonInteractionEvent;
-import discord4j.core.spec.InteractionCallbackSpec;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
@@ -22,9 +21,8 @@ public class ButtonInteractionListener implements EventListener<ButtonInteractio
 
   @Override
   public Mono<Void> execute(ButtonInteractionEvent event) {
-    return event
-        .deferReply(InteractionCallbackSpec.builder().ephemeral(true).build())
-        .then(buttonDispatcher.dispatch(event))
+    return buttonDispatcher
+        .dispatch(event)
         .onErrorResume(
             exception -> {
               log.error("Error while processing ButtonInteractionEvent", exception);

@@ -87,7 +87,11 @@ public class SendButtonCommand implements SlashCommand {
                                 buttonId,
                                 event.getInteraction().getUser().getUsername(),
                                 event.getInteraction().getUser().getId().asString(),
-                                event.getInteraction().getGuildId().map(Snowflake::asString));
+                                event
+                                    .getInteraction()
+                                    .getGuildId()
+                                    .map(Snowflake::asString)
+                                    .orElse("N/A"));
 
                             return buttonType.sendButton(textChannel);
                           }

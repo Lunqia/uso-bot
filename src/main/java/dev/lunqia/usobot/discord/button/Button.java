@@ -7,4 +7,8 @@ public interface Button {
   String id();
 
   Mono<Void> handle(ButtonInteractionEvent event);
+
+  default boolean shouldAutomaticallyDefer() {
+    return true;
+  }
 }

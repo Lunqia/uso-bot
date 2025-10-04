@@ -18,6 +18,7 @@ public class Ticket {
   private Status status;
   private Long closedByUserId;
   private Instant closedAt;
+  private String closureReason;
 
   public enum Status {
     OPEN,

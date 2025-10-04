@@ -7,4 +7,6 @@ import reactor.core.publisher.Mono;
 @Repository
 public interface TicketRepository extends ReactiveMongoRepository<Ticket, String> {
   Mono<Boolean> existsByUserIdAndGuildIdAndStatus(Long userId, Long guildId, Ticket.Status status);
+
+  Mono<Ticket> findByUserIdAndGuildIdAndClosedAtIsNull(Long userId, Long guildId);
 }

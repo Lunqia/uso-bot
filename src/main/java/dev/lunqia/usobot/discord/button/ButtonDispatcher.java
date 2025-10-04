@@ -2,6 +2,7 @@ package dev.lunqia.usobot.discord.button;
 
 import discord4j.common.util.Snowflake;
 import discord4j.core.event.domain.interaction.ButtonInteractionEvent;
+import discord4j.core.spec.InteractionCallbackSpec;
 import discord4j.discordjson.possible.Possible;
 import java.util.HashMap;
 import java.util.List;
@@ -28,20 +29,26 @@ public class ButtonDispatcher {
         () -> {
           String buttonId = event.getCustomId();
           Button button = buttonMap.get(buttonId);
+
           if (button == null)
             return event
                 .editReply()
                 .withContent(Possible.of(Optional.of("Unknown button, please report this.")))
                 .then();
 
+          Mono<Void> deferMono = Mono.empty();
+          if (button.shouldAutomaticallyDefer())
+            deferMono =
+                event.deferReply(InteractionCallbackSpec.builder().ephemeral(true).build()).then();
+
           log.info(
               "Dispatching button: '{}' | requester: {} ({}) | guildId: {}",
               buttonId,
               event.getInteraction().getUser().getUsername(),
               event.getInteraction().getUser().getId().asString(),
-              event.getInteraction().getGuildId().map(Snowflake::asString));
+              event.getInteraction().getGuildId().map(Snowflake::asString).orElse("N/A"));
 
-          return button.handle(event);
+          return deferMono.then(button.handle(event));
         });
   }
 }
