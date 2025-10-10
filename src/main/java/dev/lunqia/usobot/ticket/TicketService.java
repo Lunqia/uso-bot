@@ -89,6 +89,10 @@ public class TicketService {
         userId.asLong(), guildId.asLong());
   }
 
+  public Mono<Ticket> getTicketByChannelId(Snowflake channelId) {
+    return ticketRepository.findByChannelId(channelId.asLong());
+  }
+
   public Mono<Ticket> closeTicket(
       Ticket ticket,
       TextChannel ticketChannel,

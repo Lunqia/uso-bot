@@ -23,7 +23,7 @@ public enum ModalType {
                       "close_ticket_reason_text_input",
                       "Enter the reason for closing the ticket",
                       1,
-                      2000)))
+                      1000)))
           .build());
 
   private final String friendlyName;
